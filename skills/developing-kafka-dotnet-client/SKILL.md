@@ -2,15 +2,17 @@
 name: developing-kafka-dotnet-client
 description: "Use when the user wants to integrate a Kafka client into an existing .NET/C# application or scaffold a new Confluent.Kafka producer/consumer project for Confluent Cloud, local Docker, or WarpStream. Covers the Confluent .NET client (Confluent.Kafka, the librdkafka-based IProducer/IConsumer/AdminClient API) with JSON Schema, Avro, or Protobuf serdes via Confluent.SchemaRegistry.Serdes. Also use when the user wants to optimize .NET Kafka client configuration for WarpStream. Do NOT trigger for Kafka Streams apps, Flink, connectors, or the Java/Python Kafka clients (use developing-kafka-java-client or developing-kafka-python-client instead)."
 metadata:
-   version: "1.0.0"
+   version: "1.1.0"
 ---
 
 <HARD-GATE>
-Do NOT generate any code, scaffold any project, or modify any file until you have
-explicitly asked and received answers for questions #1 (existing app or greenfield),
-#2 (target environment), and #3 (producer, consumer, or both). If the user's prompt
-partially answers some questions, still confirm your understanding before generating.
-This applies to EVERY prompt regardless of how specific it appears.
+Do NOT generate any code, scaffold any project, or modify any file until Step 1 AND
+Step 1b below are both complete: every open question (#1 existing app or greenfield,
+#2 target environment, #3 producer/consumer/both, etc.) has been asked and answered,
+and the user has confirmed a final recap. This applies to EVERY prompt regardless of
+how specific it appears -- even a fully-specified prompt still needs the Step 1b
+recap-and-confirm turn before you generate; it just means Step 1b happens in your
+first reply instead of a later one.
 </HARD-GATE>
 
 Begin by announcing: "Using the Confluent Kafka .NET Client skill to guide this project."
@@ -25,25 +27,23 @@ object-storage-backed); and three schema formats: **JSON Schema** (default), **A
 
 ## Step 1: Gather Requirements
 
-Before generating any code, work through the questions below. **Skip any question the user has
-already answered explicitly in their prompt** -- do not re-ask just for form's sake. For example,
-"build a producer and consumer on Confluent Cloud with fire-and-forget style sends" already answers
-#2, #3, and #4; only #1, #5, #6, #7, and #8 remain.
-
-**Mandatory confirmation gate -- do not skip, even if the user answered every question.** Before
-writing any file, you MUST send one message that:
-1. Recaps the answers you extracted as a short bulleted list (e.g., "Target: Confluent Cloud ·
-   Components: producer + consumer · Send pattern: delivery-callback · From scratch: yes").
-2. Asks any remaining open questions inline.
-3. Explicitly asks the user to confirm or correct before you proceed.
-
-Then STOP and wait for the user's reply. Do not generate files in the same turn as the recap, and do
-not proceed on the assumption that a fully-specified prompt implies consent to generate immediately
--- the recap catches misinterpretations of the prompt and is required even when questions #1-#8 are
-all pre-answered. The only way to skip the gate is if the user has already confirmed the recap
-earlier in this conversation.
+Before generating any code, work through the questions below. **Skip *re-asking* any question the
+user has already answered explicitly in their prompt** -- but always echo back what you understood
+for those answered questions in the same reply (a short "Got it: ..." lead-in), rather than silently
+dropping them. This is what the HARD-GATE means by "still confirm your understanding" for
+partially-answered prompts: you're not asking it again, you're surfacing your interpretation of it so
+the user can correct a misread before you go further. For example, for "build a producer and consumer
+on Confluent Cloud with fire-and-forget style sends" (which already answers #2, #3, and #4), open your
+reply with something like "Got it -- Confluent Cloud, producer + consumer, delivery-callback sends,"
+then ask only about #1, #5, #6, #7, and #8.
 
 Do not assume defaults for #1, #2, or #3 -- if any of these are not answered by the prompt, you must ask.
+
+If the prompt leaves nothing open (every question below is answered or has an unambiguous default),
+your first reply's "Got it: ..." echo already contains everything Step 1b needs, so fold Step 1b's
+full recap format into that same first message and wait for confirmation there -- don't send a second
+"just checking" message first. Otherwise, ask the remaining open questions now and move to Step 1b
+once the user answers them.
 
 1. **Are you adding Kafka to an existing application, or starting from scratch?**
    - If the user has an existing .NET project (mentions a `.csproj`/`.sln`, ASP.NET Core, a Worker
@@ -53,6 +53,12 @@ Do not assume defaults for #1, #2, or #3 -- if any of these are not answered by 
      patterns in the reference files. Generate only the files they are missing (e.g., `KafkaConfig.cs`,
      `Value.cs`) and modify their existing code inline. Add the `Confluent.Kafka` /
      `Confluent.SchemaRegistry.Serdes.*` package references to their existing `.csproj`.
+   - **If they haven't shown you their `.csproj`** (e.g., they pasted a class but not the project
+     file), ask them to paste it -- or just its `<ItemGroup>` of `<PackageReference>`s -- before you
+     touch package references. Do **not** invent a new wrapper `.csproj` around their class as a
+     stand-in; that recreates the exact "competing project" problem this rule exists to avoid, and it
+     leaves their real project un-migrated. While you wait, you can still tell them precisely which
+     `<PackageReference Include="..." Version="..." />` line(s) to add by hand.
    - If the user already produces to Kafka without Schema Registry (e.g., hand-rolled
      `JsonSerializer.Serialize` into a `string`/`byte[]` value), help them migrate: (1) generate a
      schema from their existing message shape, (2) register it, and (3) replace their raw
@@ -112,7 +118,9 @@ built-in schema registry, note that it only supports Avro and Protobuf (`GET /sc
 
 ## Step 1b: Confirm Understanding
 
-After gathering all answers, present a confirmation summary before generating any code:
+Once every question is answered (either from the original prompt or the user's reply to Step 1),
+present this confirmation summary before generating any code -- in the same message as Step 1's "Got
+it: ..." echo if nothing was left open, otherwise as your next reply after the user fills the gaps:
 
 ```
 Before I generate the project, let me confirm:

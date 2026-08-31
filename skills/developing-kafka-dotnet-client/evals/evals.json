@@ -80,8 +80,8 @@
       "files": [],
       "assertions": [
         "Skill asks which target environment to use (Confluent Cloud, local Docker, or WarpStream) before generating",
-        "Skill asks whether the user wants a `producer`, `consumer`, or `both` before generating",
-        "Skill presents a recap and waits for confirmation, and does NOT write any files in the first turn",
+        "Skill explicitly confirms which of producer, consumer, or both the user wants before generating -- either by asking (since this prompt leaves it unstated for consumer/both) or, for anything the prompt already answered, by echoing back what it understood",
+        "Skill does NOT write any files in the first turn, and states that it will present a recap for confirmation once the remaining open questions (environment, existing-app-vs-greenfield, schema/data fields, topic) are answered",
         "Skill does NOT scaffold files in the first turn before requirements are confirmed"
       ]
     },
@@ -103,19 +103,23 @@
     },
     {
       "id": 6,
-      "prompt": "I have an existing ASP.NET Core Worker Service that produces JSON to Kafka without Schema Registry. Here is my current code:\n\n```csharp\npublic class EventPublisher\n{\n    private readonly IProducer<string, string> _producer;\n    public EventPublisher(IConfiguration config)\n    {\n        var producerConfig = new ProducerConfig { BootstrapServers = config[\"BOOTSTRAP_SERVER\"] };\n        _producer = new ProducerBuilder<string, string>(producerConfig).Build();\n    }\n    public void Publish(string topic, object evt)\n    {\n        var json = System.Text.Json.JsonSerializer.Serialize(evt);\n        _producer.Produce(topic, new Message<string, string> { Value = json });\n    }\n}\n```\n\nI want to add Schema Registry. I'm on Confluent Cloud. Events look like: {\"userId\":\"abc\",\"action\":\"page_view\",\"url\":\"/home\",\"occurredAt\":\"2026-04-13T10:00:00Z\"}",
-      "expected_output": "The skill should NOT scaffold a brand new project. It modifies the existing EventPublisher to use a Confluent Schema Registry JsonSerializer<T> instead of raw System.Text.Json serialization to a string, generates a POCO class matching the existing message structure, adds the Confluent.SchemaRegistry.Serdes.Json PackageReference to the existing .csproj, and registers the schema with AutoRegisterSchemas=false.",
+      "prompt": "I have an existing ASP.NET Core Worker Service that produces JSON to Kafka without Schema Registry. Here is my current code:\n\n```csharp\npublic class EventPublisher\n{\n    private readonly IProducer<string, string> _producer;\n    public EventPublisher(IConfiguration config)\n    {\n        var producerConfig = new ProducerConfig { BootstrapServers = config[\"BOOTSTRAP_SERVER\"] };\n        _producer = new ProducerBuilder<string, string>(producerConfig).Build();\n    }\n    public void Publish(string topic, object evt)\n    {\n        var json = System.Text.Json.JsonSerializer.Serialize(evt);\n        _producer.Produce(topic, new Message<string, string> { Value = json });\n    }\n}\n```\n\nAnd here's my .csproj:\n\n```xml\n<Project Sdk=\"Microsoft.NET.Sdk.Worker\">\n  <PropertyGroup>\n    <TargetFramework>net8.0</TargetFramework>\n    <Nullable>enable</Nullable>\n    <ImplicitUsings>enable</ImplicitUsings>\n  </PropertyGroup>\n  <ItemGroup>\n    <PackageReference Include=\"Confluent.Kafka\" Version=\"2.6.1\" />\n  </ItemGroup>\n</Project>\n```\n\nI want to add Schema Registry. I'm on Confluent Cloud. We haven't registered any schemas in Schema Registry yet. Events look like: {\"userId\":\"abc\",\"action\":\"page_view\",\"url\":\"/home\",\"occurredAt\":\"2026-04-13T10:00:00Z\"}",
+      "expected_output": "The skill should NOT scaffold a brand new project. It modifies the existing EventPublisher to use a Confluent Schema Registry JsonSerializer<T> instead of raw System.Text.Json serialization to a string, generates a POCO class matching the existing message structure, adds the Confluent.SchemaRegistry.Serdes.Json PackageReference to the SAME .csproj the user provided, and registers the schema with AutoRegisterSchemas=false.",
       "files": [
         {
           "path": "EventPublisher.cs",
           "content": "using Confluent.Kafka;\nusing Microsoft.Extensions.Configuration;\n\npublic class EventPublisher\n{\n    private readonly IProducer<string, string> _producer;\n    public EventPublisher(IConfiguration config)\n    {\n        var producerConfig = new ProducerConfig { BootstrapServers = config[\"BOOTSTRAP_SERVER\"] };\n        _producer = new ProducerBuilder<string, string>(producerConfig).Build();\n    }\n    public void Publish(string topic, object evt)\n    {\n        var json = System.Text.Json.JsonSerializer.Serialize(evt);\n        _producer.Produce(topic, new Message<string, string> { Value = json });\n    }\n}\n"
+        },
+        {
+          "path": "EventPublishing.csproj",
+          "content": "<Project Sdk=\"Microsoft.NET.Sdk.Worker\">\n  <PropertyGroup>\n    <TargetFramework>net8.0</TargetFramework>\n    <Nullable>enable</Nullable>\n    <ImplicitUsings>enable</ImplicitUsings>\n  </PropertyGroup>\n  <ItemGroup>\n    <PackageReference Include=\"Confluent.Kafka\" Version=\"2.6.1\" />\n  </ItemGroup>\n</Project>\n"
         }
       ],
       "assertions": [
         "The existing EventPublisher.cs is modified in place -- the skill does NOT scaffold a new top-level JsonSchemaProducer.cs project",
         "The value type/serializer changes from a raw string built with System.Text.Json.JsonSerializer.Serialize to a Confluent Schema Registry JsonSerializer<T>",
         "A POCO class is generated from the existing message structure including a UserId property and an Action property",
-        "The Confluent.SchemaRegistry.Serdes.Json PackageReference is added to the existing .csproj",
+        "The Confluent.SchemaRegistry.Serdes.Json PackageReference is added to the SAME EventPublishing.csproj the user provided -- the skill does NOT fabricate a separate new .csproj as a stand-in",
         "Serializer is configured with AutoRegisterSchemas = false"
       ]
     },
