@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
-using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 
 namespace ExampleKafka
@@ -24,7 +23,7 @@ namespace ExampleKafka
             // KIP-848 next-gen rebalance protocol (Kafka 4.0+ clients and brokers).
             // Eliminates stop-the-world rebalances. Falls back to Classic if unset.
             consumerConfig.GroupProtocol = GroupProtocol.Consumer;
-            var topic = env.TryGetValue("TOPIC", out var t) ? t : "demo-topic";
+            var topic = KafkaConfig.Get(env, "TOPIC", "demo-topic");
 
             var adminConfig = KafkaConfig.BaseAdminConfig(env);
             if (!KafkaConfig.VerifyKafkaSetup(adminConfig, topic))
@@ -32,15 +31,17 @@ namespace ExampleKafka
                 throw new InvalidOperationException("Failed to verify Kafka setup");
             }
 
-            var srUrl = env.TryGetValue("SCHEMA_REGISTRY_URL", out var url) ? url : "";
-            var srKey = env.TryGetValue("SR_API_KEY", out var k) ? k : null;
-            var srSecret = env.TryGetValue("SR_API_SECRET", out var s) ? s : null;
+            var srUrl = KafkaConfig.Get(env, "SCHEMA_REGISTRY_URL");
+            var srKey = KafkaConfig.Get(env, "SR_API_KEY");
+            var srSecret = KafkaConfig.Get(env, "SR_API_SECRET");
             if (!await KafkaConfig.VerifySchemaRegistryAsync(srUrl, srKey, srSecret))
             {
                 throw new InvalidOperationException("Failed to connect to Schema Registry");
             }
 
-            using var schemaRegistry = new CachedSchemaRegistryClient(KafkaConfig.SchemaRegistryConfig(env));
+            // JsonDeserializer<T> deserializes the JSON body directly (after skipping the Confluent
+            // wire-format header) and does not need an ISchemaRegistryClient -- unlike AvroDeserializer,
+            // it never fetches the writer schema from the registry to decode a record.
             var deserializer = new JsonDeserializer<Value>().AsSyncOverAsync();
 
             using var consumer = new ConsumerBuilder<string, Value>(consumerConfig)

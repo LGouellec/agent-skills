@@ -34,8 +34,11 @@ generated FROM it).
 
 1. **`doc` everywhere.** The record itself and every field MUST have a `doc`. These surface in the
    Schema Registry UI and governance tooling.
-2. **camelCase field names.** Use camelCase (`transactionId`, not `transaction_id`) so `avrogen`
-   generates idiomatic C# properties (`TransactionId`, `Amount`, ...) via PascalCase conversion.
+2. **camelCase field names -- and expect camelCase C# properties.** Use camelCase (`transactionId`,
+   not `transaction_id`), matching standard Avro convention. Unlike the JSON Schema path, `avrogen`
+   does **not** PascalCase-convert field names: a `transactionId` field generates a `transactionId`
+   C# property (verbatim casing), not `TransactionId`. Write producer/consumer code against that
+   generated casing (`record.transactionId`, not `record.TransactionId`) -- don't assume PascalCase.
 3. **`name` and `namespace` drive codegen.** The record `name` becomes the generated C# class name and
    `namespace` its C# namespace -- e.g. `"name": "Transaction"`, `"namespace": "ExampleKafka.Avro"`
    generates `ExampleKafka.Avro.Transaction`. Keep the namespace aligned with the project's structure.

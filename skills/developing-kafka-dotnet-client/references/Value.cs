@@ -10,6 +10,7 @@ namespace ExampleKafka
     /// opposite direction from Avro/Protobuf, where the schema file is the source of
     /// truth and this class would instead be generated FROM it.
     /// </summary>
+    [Description("An order placed by a customer.")]
     public class Value
     {
         [Required]

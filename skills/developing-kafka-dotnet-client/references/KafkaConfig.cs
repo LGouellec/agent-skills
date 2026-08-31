@@ -41,7 +41,14 @@ namespace ExampleKafka
             return values;
         }
 
-        private static string Get(IReadOnlyDictionary<string, string> env, string key, string? defaultValue = null)
+        /// <summary>
+        /// Look up a config key: a value in the dictionary returned by <see cref="LoadEnv"/> wins,
+        /// otherwise fall back to the process environment, otherwise <paramref name="defaultValue"/>.
+        /// Public so producer/consumer code can resolve keys (e.g. TOPIC, SCHEMA_REGISTRY_URL) the
+        /// same way -- reading directly from the <c>env</c> dictionary via TryGetValue skips the
+        /// environment-variable fallback and silently ignores env-var-only configuration.
+        /// </summary>
+        public static string Get(IReadOnlyDictionary<string, string> env, string key, string? defaultValue = null)
         {
             if (env.TryGetValue(key, out var value) && !string.IsNullOrEmpty(value))
             {
@@ -96,16 +103,22 @@ namespace ExampleKafka
         private static void ApplySecurity(ClientConfig config, IReadOnlyDictionary<string, string> env)
         {
             var kafkaEnv = Get(env, "KAFKA_ENV", "cloud");
-            if (kafkaEnv == "local")
-            {
-                config.SecurityProtocol = SecurityProtocol.Plaintext;
-            }
-            else
+            var apiKey = Get(env, "API_KEY");
+            var apiSecret = Get(env, "API_SECRET");
+            // Confluent Cloud always requires SASL_SSL. Local Docker is always Plaintext (no auth).
+            // WarpStream supports either -- Plaintext for unauthenticated deployments, SASL_SSL when
+            // API_KEY/API_SECRET are configured -- so branch on whether credentials were provided.
+            var useSasl = kafkaEnv == "cloud" || (kafkaEnv == "warpstream" && !string.IsNullOrEmpty(apiKey));
+            if (useSasl)
             {
                 config.SecurityProtocol = SecurityProtocol.SaslSsl;
                 config.SaslMechanism = SaslMechanism.Plain;
-                config.SaslUsername = Get(env, "API_KEY");
-                config.SaslPassword = Get(env, "API_SECRET");
+                config.SaslUsername = apiKey;
+                config.SaslPassword = apiSecret;
+            }
+            else
+            {
+                config.SecurityProtocol = SecurityProtocol.Plaintext;
             }
         }
 

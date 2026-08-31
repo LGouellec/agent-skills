@@ -2,7 +2,7 @@
 name: developing-kafka-dotnet-client
 description: "Use when the user wants to integrate a Kafka client into an existing .NET/C# application or scaffold a new Confluent.Kafka producer/consumer project for Confluent Cloud, local Docker, or WarpStream. Covers the Confluent .NET client (Confluent.Kafka, the librdkafka-based IProducer/IConsumer/AdminClient API) with JSON Schema, Avro, or Protobuf serdes via Confluent.SchemaRegistry.Serdes. Also use when the user wants to optimize .NET Kafka client configuration for WarpStream. Do NOT trigger for Kafka Streams apps, Flink, connectors, or the Java/Python Kafka clients (use developing-kafka-java-client or developing-kafka-python-client instead)."
 metadata:
-   version: "1.1.0"
+   version: "1.1.1"
 ---
 
 <HARD-GATE>
@@ -24,6 +24,16 @@ Generate a production-ready .NET project for producing to and/or consuming from 
 **Confluent Cloud** (managed), **Local Docker**, and **WarpStream** (Kafka-compatible,
 object-storage-backed); and three schema formats: **JSON Schema** (default), **Avro**, and
 **Protobuf**. The generated code follows Confluent's best practices.
+
+## ⚠️ IMPORTANT: Lazy-Load References Only
+**Do NOT read all files in `references/` upfront. Read only the ones the current step needs.**
+
+- Gathering requirements (Step 1) needs no reference file yet -- the questions below are self-contained.
+- Generating a producer/consumer needs only the one or two `.cs` templates for the chosen send
+  pattern and format (e.g. `references/JsonSchemaProducer.cs`), not every template in the directory.
+- WarpStream tuning, the consumer commit-strategy tradeoffs, multi-event unions, and the
+  post-generation run instructions each live in their own reference file -- open the one that matches
+  what you're doing right now, not all of them "just in case."
 
 ## Step 1: Gather Requirements
 
@@ -348,50 +358,9 @@ and `KAFKA_LISTENERS` using those exact names.
 
 ### appsettings.json.example
 
-Generate the appropriate `appsettings.json.example` for the target environment. It is a flat JSON
-object, loaded by `KafkaConfig.LoadEnv()` via `System.Text.Json`:
-
-**Confluent Cloud:**
-```json
-{
-  "KAFKA_ENV": "cloud",
-  "BOOTSTRAP_SERVER": "pkc-xxxxx.us-east-1.aws.confluent.cloud:9092",
-  "API_KEY": "your-api-key",
-  "API_SECRET": "your-api-secret",
-  "TOPIC": "demo-topic",
-  "SCHEMA_REGISTRY_URL": "https://psrc-xxxxx.us-east-2.aws.confluent.cloud",
-  "SR_API_KEY": "your-sr-api-key",
-  "SR_API_SECRET": "your-sr-api-secret",
-  "CLIENT_ID": "dotnet-client",
-  "GROUP_ID": "dotnet-consumer-group"
-}
-```
-
-**Local Docker:**
-```json
-{
-  "KAFKA_ENV": "local",
-  "BOOTSTRAP_SERVER": "localhost:9092",
-  "TOPIC": "demo-topic",
-  "SCHEMA_REGISTRY_URL": "http://localhost:8081",
-  "CLIENT_ID": "dotnet-client",
-  "GROUP_ID": "dotnet-consumer-group"
-}
-```
-
-**WarpStream:**
-```json
-{
-  "KAFKA_ENV": "warpstream",
-  "BOOTSTRAP_SERVER": "your-warpstream-bootstrap-url:9092",
-  "TOPIC": "demo-topic",
-  "SCHEMA_REGISTRY_URL": "http://your-schema-registry:8081",
-  "CLIENT_ID": "dotnet-client,ws_az=us-east-1a",
-  "GROUP_ID": "dotnet-consumer-group"
-}
-```
-If the WarpStream deployment requires SASL auth or a Confluent Cloud Schema Registry, add `API_KEY`/
-`API_SECRET` and/or `SR_API_KEY`/`SR_API_SECRET` as in the Confluent Cloud example.
+Generate the appropriate `appsettings.json.example` for the target environment -- a flat JSON object
+loaded by `KafkaConfig.LoadEnv()` via `System.Text.Json`. Read `references/appsettings-examples.md`
+for the exact Confluent Cloud / Local Docker / WarpStream templates before writing this file.
 
 ### Project Files
 
@@ -440,36 +409,6 @@ any test fails, fix the generated code (not the tests) until they pass.
 
 ## Step 3: Guide the User
 
-After generating the files, give instructions based on the target environment. Adapt to what was generated.
-
-**Confluent Cloud:**
-1. Copy `appsettings.json.example` to `appsettings.json` inside `src/<ProjectName>/` and fill in
-   Confluent Cloud credentials (bootstrap server, API keys, Schema Registry URL -- all in the
-   Confluent Cloud Console under cluster/environment settings).
-2. Build: `dotnet build`. For the Avro path, run `avrogen -s Avro/value.avsc Avro/` first.
-3. If a producer was generated, the schema is registered explicitly on first run via
-   `RegisterSchemaAsync()` (`AutoRegisterSchemas = false`). If only a consumer was generated, register
-   the schema manually in the Console under Schema Registry for the topic's value subject.
-4. Run the producer: `dotnet run --project src/<ProjectName> -p:StartupObject=<Namespace>.JsonSchemaProducer`.
-5. Run the consumer: `dotnet run --project src/<ProjectName> -p:StartupObject=<Namespace>.JsonSchemaConsumer`.
-
-**Local Docker:**
-1. Start Kafka + Schema Registry: `docker compose up -d`.
-2. Copy `appsettings.json.example` to `appsettings.json` (defaults are pre-filled for local Docker).
-3. Build: `dotnet build`.
-4. Create the topic if auto-creation is disabled: `docker compose exec kafka kafka-topics --create
-   --topic demo-topic --bootstrap-server localhost:29092`.
-5. Run the producer / consumer as above.
-6. When done: `docker compose down` (add `-v` to remove stored data).
-
-**WarpStream:**
-1. Copy `appsettings.json.example` to `appsettings.json` and fill in the WarpStream bootstrap server,
-   Schema Registry URL, and (if applicable) credentials. Set `CLIENT_ID` to include
-   `ws_az=<availability-zone>` for zone-aware routing.
-2. Build: `dotnet build`.
-3. Create the topic if it doesn't exist.
-4. Run the producer / consumer as above.
-
-Remind WarpStream users that produce latency (~250ms p50) is higher than standard Kafka -- this is
-expected. If throughput is low, verify the overrides from `references/warpstream-optimization.md` are
-applied (especially `EnableIdempotence=false` and large batch/fetch sizes).
+After generating the files, read `references/post-generation-guide.md` for the exact per-environment
+run instructions (Confluent Cloud, Local Docker, WarpStream) and adapt them to what was actually
+generated.

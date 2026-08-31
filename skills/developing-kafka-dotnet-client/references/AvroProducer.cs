@@ -22,12 +22,20 @@ namespace ExampleKafka
         {
             var env = KafkaConfig.LoadEnv();
             var producerConfig = KafkaConfig.BaseProducerConfig(env);
-            var topic = env.TryGetValue("TOPIC", out var t) ? t : "demo-topic";
+            var topic = KafkaConfig.Get(env, "TOPIC", "demo-topic");
 
             var adminConfig = KafkaConfig.BaseAdminConfig(env);
             if (!KafkaConfig.VerifyKafkaSetup(adminConfig, topic))
             {
                 throw new InvalidOperationException("Failed to verify Kafka setup");
+            }
+
+            var srUrl = KafkaConfig.Get(env, "SCHEMA_REGISTRY_URL");
+            var srKey = KafkaConfig.Get(env, "SR_API_KEY");
+            var srSecret = KafkaConfig.Get(env, "SR_API_SECRET");
+            if (!await KafkaConfig.VerifySchemaRegistryAsync(srUrl, srKey, srSecret))
+            {
+                throw new InvalidOperationException("Failed to connect to Schema Registry");
             }
 
             using var schemaRegistry = new CachedSchemaRegistryClient(KafkaConfig.SchemaRegistryConfig(env));
@@ -47,16 +55,18 @@ namespace ExampleKafka
                 .SetValueSerializer(serializer.AsSyncOverAsync())
                 .Build();
 
+            // avrogen keeps the .avsc field casing verbatim -- these are camelCase properties
+            // (transactionId, amount, ...), NOT PascalCase, even though C# convention is PascalCase.
             var sample = new Transaction
             {
-                TransactionId = "txn-1",
-                Amount = 42.50,
-                Currency = "USD",
-                Timestamp = DateTime.UtcNow.ToString("O"),
-                Status = Status.completed,
+                transactionId = "txn-1",
+                amount = 42.50,
+                currency = "USD",
+                timestamp = DateTime.UtcNow.ToString("O"),
+                status = Status.completed,
             };
 
-            Produce(producer, topic, sample.TransactionId, sample);
+            Produce(producer, topic, sample.transactionId, sample);
             producer.Flush(TimeSpan.FromSeconds(10));
         }
 

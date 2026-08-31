@@ -20,7 +20,7 @@ namespace ExampleKafka
         {
             var env = KafkaConfig.LoadEnv();
             var producerConfig = KafkaConfig.BaseProducerConfig(env);
-            var topic = env.TryGetValue("TOPIC", out var t) ? t : "demo-topic";
+            var topic = KafkaConfig.Get(env, "TOPIC", "demo-topic");
 
             var adminConfig = KafkaConfig.BaseAdminConfig(env);
             if (!KafkaConfig.VerifyKafkaSetup(adminConfig, topic))
@@ -28,9 +28,9 @@ namespace ExampleKafka
                 throw new InvalidOperationException("Failed to verify Kafka setup");
             }
 
-            var srUrl = env.TryGetValue("SCHEMA_REGISTRY_URL", out var url) ? url : "";
-            var srKey = env.TryGetValue("SR_API_KEY", out var k) ? k : null;
-            var srSecret = env.TryGetValue("SR_API_SECRET", out var s) ? s : null;
+            var srUrl = KafkaConfig.Get(env, "SCHEMA_REGISTRY_URL");
+            var srKey = KafkaConfig.Get(env, "SR_API_KEY");
+            var srSecret = KafkaConfig.Get(env, "SR_API_SECRET");
             if (!await KafkaConfig.VerifySchemaRegistryAsync(srUrl, srKey, srSecret))
             {
                 throw new InvalidOperationException("Failed to connect to Schema Registry");

@@ -2,7 +2,7 @@
   "type": "record",
   "name": "Transaction",
   "namespace": "ExampleKafka.Avro",
-  "doc": "A financial transaction event produced to Kafka. Example Avro schema -- replace with the user's domain. Use camelCase field names so avrogen generates idiomatic C# properties (TransactionId, Amount, ...).",
+  "doc": "A financial transaction event produced to Kafka. Example Avro schema -- replace with the user's domain. Use camelCase field names -- avrogen generates C# properties with this exact casing (transactionId, amount, ...), it does not convert to PascalCase.",
   "fields": [
     {"name": "transactionId", "type": "string", "doc": "Unique identifier for this transaction. Used as the Kafka message key."},
     {"name": "amount", "type": "double", "default": 0, "doc": "Transaction amount in the specified currency."},

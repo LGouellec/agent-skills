@@ -23,10 +23,9 @@
     <PackageReference Include="Confluent.SchemaRegistry.Serdes.Json" Version="2.15.0" />
     <!-- Avro alternative: swap the line above for
          PackageReference Confluent.SchemaRegistry.Serdes.Avro, version 2.15.0.
-         Generate C# classes from *.avsc with avrogen before building
-         (install with: dotnet tool install global Apache.Avro.Tools), then run:
-           avrogen -s Avro/value.avsc Avro/
-    -->
+         Generate C# classes from *.avsc with avrogen before building; see
+         schema-generation-rules.md for the avrogen install command and invocation
+         (an XML comment cannot contain two adjacent dashes, so it isn't repeated here). -->
     <!-- Protobuf alternative: swap the Serdes.Json line above for
          PackageReference Confluent.SchemaRegistry.Serdes.Protobuf plus
          PackageReference Grpc.Tools (PrivateAssets="All"), version 2.83.0,
