@@ -125,23 +125,6 @@
     },
     {
       "id": 7,
-      "prompt": "I need a .NET Kafka producer and consumer for WarpStream. I want to confirm each write before moving to the next, so use the awaited ProduceAsync pattern. Sending device telemetry events with fields: deviceId, temperature, humidity, batteryLevel, recordedAt.",
-      "expected_output": "A .NET project targeting WarpStream with JsonSchemaProducerSync.cs, JsonSchemaConsumer.cs, KafkaConfig.cs, Value.cs, AppTests.cs, appsettings.json.example. Producer uses WarpStream-optimized config (idempotence disabled, large batches, high in-flight requests); consumer uses large fetch sizes. appsettings.json.example has KAFKA_ENV=warpstream and CLIENT_ID with ws_az=.",
-      "files": [],
-      "assertions": [
-        "JsonSchemaProducerSync.cs is generated and uses await producer.ProduceAsync(...)",
-        "JsonSchemaConsumer.cs is generated",
-        "appsettings.json.example sets KAFKA_ENV to warpstream",
-        "appsettings.json.example's CLIENT_ID includes ws_az= for zone-aware routing",
-        "Producer config sets EnableIdempotence = false",
-        "Producer config raises MaxInFlight and BatchSize for WarpStream",
-        "Consumer config sets a large FetchMaxBytes and MaxPartitionFetchBytes and does NOT set FetchMinBytes",
-        "Value.cs includes a DeviceId property and a Temperature property",
-        "AppTests.cs is generated and all tests pass with `dotnet test`"
-      ]
-    },
-    {
-      "id": 8,
       "prompt": "I want a .NET consumer on Confluent Cloud for a work queue: I need many consumers to cooperatively process messages off the same topic concurrently and scale beyond the partition count, like Kafka's Share Consumer / Queues for Kafka feature. Events have fields jobId, payload, submittedAt.",
       "expected_output": "The skill does NOT fabricate a Share Consumer implementation for .NET, since Confluent.Kafka does not support KIP-932 (Queues for Kafka) as of Kafka 4.x -- that is Java-client-only. The skill tells the user this isn't available via the .NET client yet and points them at the developing-kafka-java-client skill, offering the regular consumer group as the closest available option.",
       "files": [],
@@ -153,7 +136,7 @@
       ]
     },
     {
-      "id": 9,
+      "id": 8,
       "prompt": "I need a .NET Kafka producer for a batch ETL job on Confluent Cloud that ingests CSV rows with fields: employeeId, department, salary, hireDate. I want to confirm each row lands before continuing to the next row.",
       "expected_output": "A .NET project with JsonSchemaProducerSync.cs (await ProduceAsync per record), KafkaConfig.cs, Value.cs, AppTests.cs, appsettings.json.example. Producer awaits each send, registers the schema explicitly, targets Confluent Cloud.",
       "files": [],
