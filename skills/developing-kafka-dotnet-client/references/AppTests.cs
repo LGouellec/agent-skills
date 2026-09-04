@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using Confluent.Kafka;
 using Moq;
 using Xunit;

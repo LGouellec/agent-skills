@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 using Confluent.Kafka.SyncOverAsync;
+using Confluent.SchemaRegistry;
 using Confluent.SchemaRegistry.Serdes;
 
 namespace ExampleKafka
@@ -39,10 +40,11 @@ namespace ExampleKafka
                 throw new InvalidOperationException("Failed to connect to Schema Registry");
             }
 
+            using var schemaRegistry = new CachedSchemaRegistryClient(KafkaConfig.SchemaRegistryConfig(env));
             // JsonDeserializer<T> deserializes the JSON body directly (after skipping the Confluent
             // wire-format header) and does not need an ISchemaRegistryClient -- unlike AvroDeserializer,
             // it never fetches the writer schema from the registry to decode a record.
-            var deserializer = new JsonDeserializer<Value>().AsSyncOverAsync();
+            var deserializer = new JsonDeserializer<Value>(schemaRegistry).AsSyncOverAsync();
 
             using var consumer = new ConsumerBuilder<string, Value>(consumerConfig)
                 .SetValueDeserializer(deserializer)

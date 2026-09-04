@@ -28,7 +28,8 @@ namespace ExampleKafka
         /// </summary>
         public static IReadOnlyDictionary<string, string> LoadEnv()
         {
-            var values = new Dictionary<string, string>();
+            var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+             
             if (File.Exists(ConfigFile))
             {
                 using var stream = File.OpenRead(ConfigFile);
@@ -38,6 +39,7 @@ namespace ExampleKafka
                     values[property.Name] = property.Value.GetString() ?? "";
                 }
             }
+
             return values;
         }
 
