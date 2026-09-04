@@ -25,5 +25,8 @@ namespace ExampleKafka
 
         [Description("When the order was placed (ISO 8601).")]
         public string Timestamp { get; set; } = "";
+
+        [Description("Optional metadata associated with the order.")]
+        public string? Metadata { get; set; } = null;
     }
 }

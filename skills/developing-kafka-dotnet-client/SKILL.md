@@ -2,7 +2,7 @@
 name: developing-kafka-dotnet-client
 description: "Use when the user wants to integrate a Kafka client into an existing .NET/C# application or scaffold a new Confluent.Kafka producer/consumer project for Confluent Cloud, local Docker, or WarpStream. Covers the Confluent .NET client (Confluent.Kafka, the librdkafka-based IProducer/IConsumer/AdminClient API) with JSON Schema, Avro, or Protobuf serdes via Confluent.SchemaRegistry.Serdes. Also use when the user wants to optimize .NET Kafka client configuration for WarpStream. Do NOT trigger for Kafka Streams apps, Flink, connectors, or the Java/Python Kafka clients (use developing-kafka-java-client or developing-kafka-python-client instead)."
 metadata:
-   version: "1.1.1"
+   version: "1.1.2"
 ---
 
 <HARD-GATE>
